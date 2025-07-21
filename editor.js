@@ -29,6 +29,7 @@ function setupMonaco() {
 # Press New terminal in the Terminal tab to start terminal
 # You can resize the panel sizes by dragging the borders
 
+
 def main():
     print("Hello, World!")
     

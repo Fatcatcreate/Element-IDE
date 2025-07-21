@@ -1,7 +1,7 @@
 {
   "name": "python-ide",
   "version": "1.0.0",
-  "description": "A minimal Python IDE built with Electron",
+  "description": "IDE",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

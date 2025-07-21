@@ -17,8 +17,9 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js')
+
     },
-    icon: path.join(__dirname, 'assets', 'icon.png'), // Add your icon
+    icon: path.join(__dirname, 'jib_rounded2.png'), // Add your icon
     show: false
   });
 
@@ -109,7 +110,7 @@ function createMenu() {
       label: 'Run',
       submenu: [
         {
-          label: 'Run Python Code',
+          label: 'Run Code',
           accelerator: 'CmdOrCtrl+Enter',
           click: () => {
             mainWindow.webContents.send('menu-run-code');
@@ -235,67 +236,66 @@ ipcMain.handle('delete-file', async (event, filePath) => {
   }
 });''
 
-// IPC handler for Python execution
-ipcMain.handle('run-python', async (event, { code, path: filePath }) => {
+// IPC handler for code execution
+ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
   return new Promise((resolve) => {
-    let stdout = '';
-    let stderr = '';
-    
-    // Create a temporary file if no file path is provided
-    let tempFile = null;
-    let actualFilePath = filePath;
-    
-    if (!filePath) {
-      tempFile = path.join(__dirname, 'temp_script.py');
-      actualFilePath = tempFile;
-    }
-    
-    // Write code to file
-    fs.writeFile(actualFilePath, code, 'utf-8', (writeErr) => {
-      if (writeErr) {
-        resolve({ success: false, error: writeErr.message, exitCode: 1 });
+    const { spawn } = require('child_process');
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+    const languageConfig = require('./language_config');
+
+    const extension = path.extname(filePath || '');
+    const language = Object.keys(languageConfig).find(lang => languageConfig[lang].extensions.includes(extension));
+
+    if (!language) {
+        resolve({ success: false, error: `Unsupported file type: ${extension}`, exitCode: 1 });
         return;
-      }
-      
-      // Execute Python script
-      const pythonProcess = spawn('python3', [actualFilePath], {
-        cwd: filePath ? path.dirname(filePath) : __dirname
-      });
-      
-      pythonProcess.stdout.on('data', (data) => {
-        stdout += data.toString();
-      });
-      
-      pythonProcess.stderr.on('data', (data) => {
-        stderr += data.toString();
-      });
-      
-      pythonProcess.on('close', (code) => {
-        // Clean up temp file
-        if (tempFile) {
-          fs.unlink(tempFile, () => {}); // Ignore errors
+    }
+
+    const config = languageConfig[language];
+    const tempDir = os.tmpdir();
+    const tempFile = path.join(tempDir, `code_runner_temp_${Date.now()}${config.extensions[0]}`);
+
+    fs.writeFile(tempFile, code, 'utf-8', (writeErr) => {
+        if (writeErr) {
+            resolve({ success: false, error: writeErr.message, exitCode: 1 });
+            return;
         }
-        
-        resolve({
-          success: true,
-          stdout: stdout,
-          stderr: stderr,
-          exitCode: code
+
+        const codeProcess = spawn(config.command, [tempFile], {
+            cwd: filePath ? path.dirname(filePath) : __dirname
         });
-      });
-      
-      pythonProcess.on('error', (error) => {
-        // Clean up temp file
-        if (tempFile) {
-          fs.unlink(tempFile, () => {}); // Ignore errors
-        }
-        
-        resolve({
-          success: false,
-          error: error.message,
-          exitCode: 1
+
+        let stdout = '';
+        let stderr = '';
+
+        codeProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
         });
-      });
+
+        codeProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+
+        codeProcess.on('close', (code) => {
+            fs.unlink(tempFile, () => {}); // Clean up temp file
+            resolve({
+                success: true,
+                stdout: stdout,
+                stderr: stderr,
+                exitCode: code
+            });
+        });
+
+        codeProcess.on('error', (error) => {
+            fs.unlink(tempFile, () => {}); // Clean up temp file
+            resolve({
+                success: false,
+                error: error.message,
+                exitCode: 1
+            });
+        });
     });
   });
 });
@@ -455,7 +455,19 @@ ipcMain.handle('terminal-input', (event, { terminalId, input }) => {
 
 
 // App event handlers
-app.whenReady().then(createWindow);
+//app.whenReady().then(createWindow);
+
+
+app.whenReady().then(() => {
+  // ✅ Set icon for macOS Dock
+  if (process.platform === 'darwin') {
+    const iconPath = path.join(__dirname, 'jib_rounded2.png');
+    app.dock.setIcon(iconPath);
+  }
+
+  createWindow();
+});
+
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

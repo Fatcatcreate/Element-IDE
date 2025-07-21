@@ -17,7 +17,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   
   
   // Python operations
-  runPython: (code, path) => ipcRenderer.invoke('run-python', { code, path }),
+  runCode: (code, path) => ipcRenderer.invoke('run-code', { code, path }),
   lintPython: (code, path) => ipcRenderer.invoke('lint-python', { code, path }),
   
   // Terminal API

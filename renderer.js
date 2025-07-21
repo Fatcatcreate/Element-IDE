@@ -452,12 +452,28 @@ function openFileFromPath(filePath, content) {
     markAsSaved();
     updateStatus(`Opened: ${filePath}`);
     focusEditor();
+
+    // Show/hide lint button based on file type
+    const lintButton = document.getElementById('lint-code');
+    if (filePath.endsWith('.py')) {
+        lintButton.style.display = 'inline-block';
+    } else {
+        lintButton.style.display = 'none';
+    }
 }
 
 // Code execution and linting
 async function runCode(code = null) {
     const codeToRun = code || getEditorContent();
     const currentPath = getCurrentFilePath();
+
+    if (!currentPath) {
+        switchToTab('output');
+        clearOutput();
+        appendToOutput('Error: Cannot determine the file type. Please save the file before running.', 'error');
+        updateStatus('Error: File path not found');
+        return;
+    }
     
     if (!codeToRun.trim()) {
         updateStatus('No code to run');
@@ -466,8 +482,8 @@ async function runCode(code = null) {
     
     if (!window.electronAPI) {
         // Fallback for non-electron environment
-        appendToOutput('Python execution requires Electron environment\n', 'error');
-        updateStatus('Python execution requires Electron environment');
+        appendToOutput('Code execution requires Electron environment\n', 'error');
+        updateStatus('Code execution requires Electron environment');
         return;
     }
     
@@ -476,11 +492,11 @@ async function runCode(code = null) {
     switchToTab('output');
     
     // Show running status
-    updateStatus('Running Python code...');
-    appendToOutput('Running Python code...\n', 'info');
+    updateStatus('Running code...');
+    appendToOutput('Running code...\n', 'info');
     
     try {
-        const result = await window.electronAPI.runPython(codeToRun, currentPath);
+        const result = await window.electronAPI.runCode(codeToRun, currentPath);
         
         if (result.stdout) {
             appendToOutput(result.stdout, 'success');

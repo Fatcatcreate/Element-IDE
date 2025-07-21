@@ -2,11 +2,12 @@ const { spawn } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 const os = require('os');
+const languageConfig = require('./language_config');
 
 let isRunning = false;
 let currentProcess = null;
 
-function runCode(code = null) {
+function runCode(code = null, filePath = null) {
     if (isRunning) {
         addOutput('A process is already running. Please wait or stop the current process.', 'warning');
         return;
@@ -19,11 +20,21 @@ function runCode(code = null) {
         return;
     }
 
+    const extension = path.extname(filePath || '');
+    const language = Object.keys(languageConfig).find(lang => languageConfig[lang].extensions.includes(extension));
+
+    if (!language) {
+        addOutput(`Unsupported file type: ${extension}`, 'error');
+        return;
+    }
+
+    const config = languageConfig[language];
+
     // Switch to output tab
     switchToTab('output');
     
     // Clear previous output
-    addOutput('Running Python code...', 'info');
+    addOutput(`Running ${language} code...`, 'info');
     addOutput('─'.repeat(50), 'info');
     
     // Update status
@@ -31,16 +42,13 @@ function runCode(code = null) {
     
     // Create temporary file
     const tempDir = os.tmpdir();
-    const tempFile = path.join(tempDir, `python_ide_temp_${Date.now()}.py`);
+    const tempFile = path.join(tempDir, `code_runner_temp_${Date.now()}${config.extensions[0]}`);
     
     try {
         fs.writeFileSync(tempFile, codeToRun);
         
-        // Determine Python command
-        const pythonCmd = getPythonCommand();
-        
-        // Spawn Python process
-        currentProcess = spawn(pythonCmd, [tempFile], {
+        // Spawn process
+        currentProcess = spawn(config.command, [tempFile], {
             stdio: ['pipe', 'pipe', 'pipe'],
             shell: process.platform === 'win32'
         });
@@ -92,11 +100,11 @@ function runCode(code = null) {
                 console.log('Failed to clean up temp file:', e);
             }
             
-            addOutput(`Failed to start Python process: ${error.message}`, 'error');
+            addOutput(`Failed to start process: ${error.message}`, 'error');
             
             if (error.code === 'ENOENT') {
-                addOutput('Python is not installed or not in PATH.', 'error');
-                addOutput('Please install Python and make sure it\'s in your system PATH.', 'error');
+                addOutput(`${config.command} is not installed or not in PATH.`, 'error');
+                addOutput(`Please install ${config.command} and make sure it\'s in your system PATH.`, 'error');
             }
             
             updateStatus('Execution failed');

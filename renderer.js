@@ -80,32 +80,7 @@ function setupMenuEventListeners() {
             }
         });
     }
-        // Add terminal input event listener
-    const terminalInput = document.getElementById('terminal-input');
-    if (terminalInput) {
-        terminalInput.addEventListener('keydown', handleTerminalInput);
-    }
 }
-
-
-// Add this right after the setupMenuEventListeners() function
-console.log('Setting up terminal input listener...');
-const terminalInput = document.getElementById('terminal-input');
-if (terminalInput) {
-    console.log('Terminal input element found');
-    terminalInput.addEventListener('keydown', (event) => {
-        console.log('Key pressed:', event.key);
-        if (event.key === 'Enter') {
-            console.log('Enter pressed, currentTerminalId:', currentTerminalId);
-            handleTerminalInput(event);
-        }
-    });
-} else {
-    console.log('Terminal input element NOT found');
-}
-
-
-
 
 // ADD THIS NEW FUNCTION to handle file saved event
 async function handleFileSaved(filePath, dirPath) {

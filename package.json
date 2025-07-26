@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "fs-extra": "^11.3.0",
+    "mime-types": "^3.0.1",
     "monaco-editor": "^0.44.0",
     "node-pty": "^1.0.0"
   },

@@ -149,17 +149,7 @@ function newFile() {
         }
     }
     
-    setEditorContent(`# New Python file
-# Write your code here
-# When you save this you can save this as any file type you want by changing the file extension on Save As
-# For example, you can save this as a .py file 
-
-def main():
-    print("Hello, World!")
-
-if __name__ == "__main__":
-    main()
-`);
+    setEditorContent(`# New Python file\n# Write your code here\n# When you save this you can save this as any file type you want by changing the file extension on Save As\n# For example, you can save this as a .py file \n\ndef main():\n    print("Hello, World!")\n\nif __name__ == "__main__":\n    main()\n`);
     
     setCurrentFilePath(null);
     updateStatus('New file created');
@@ -422,7 +412,7 @@ function openFileFromPath(filePath, content) {
         }
     }
     
-    setEditorContent(content);
+    setEditorContent(content, getBasename(filePath));
     setCurrentFilePath(filePath);
     markAsSaved();
     updateStatus(`Opened: ${filePath}`);
@@ -434,6 +424,18 @@ function openFileFromPath(filePath, content) {
         lintButton.style.display = 'inline-block';
     } else {
         lintButton.style.display = 'none';
+    }
+
+    if (window.livePreviewAPI) {
+        window.livePreviewAPI.updateLivePreviewButton(getBasename(filePath));
+    }
+
+    if (filePath.endsWith('.html')) {
+        window.editorAPI.onContentDidChange(() => {
+            if (window.livePreviewAPI) {
+                window.livePreviewAPI.updatePreview();
+            }
+        });
     }
 }
 
@@ -534,7 +536,8 @@ async function lintCode() {
                 appendToProblems('No linting issues found.\n', 'success');
                 updateStatus('No linting issues found');
             }
-        } else {
+        }
+        else {
             appendToProblems(`Linting error: ${result.error}\n`, 'error');
             updateStatus('Linting failed');
         }
@@ -628,7 +631,6 @@ async function createNewTerminal() {
 
 
 
-
 async function handleTerminalInput(event) {
     console.log('handleTerminalInput called');
     if (event.key === 'Enter' && currentTerminalId) {
@@ -652,37 +654,37 @@ function appendToTerminal(data) {
 }
 
 // Editor interface functions
-function getEditorContent() {
+window.getEditorContent = function() {
     return window.editorAPI ? window.editorAPI.getContent() : '';
 }
 
-function setEditorContent(content) {
+window.setEditorContent = function(content, filename) {
     if (window.editorAPI) {
-        window.editorAPI.setContent(content);
+        window.editorAPI.setContent(content, filename);
     }
 }
 
-function getCurrentFilePath() {
+window.getCurrentFilePath = function() {
     return window.editorAPI ? window.editorAPI.getCurrentPath() : null;
 }
 
-function setCurrentFilePath(path) {
+window.setCurrentFilePath = function(path) {
     if (window.editorAPI) {
         window.editorAPI.setCurrentPath(path);
     }
 }
 
-function isModified() {
+window.isModified = function() {
     return window.editorAPI ? window.editorAPI.isModified() : false;
 }
 
-function markAsSaved() {
+window.markAsSaved = function() {
     if (window.editorAPI) {
         window.editorAPI.markAsSaved();
     }
 }
 
-function focusEditor() {
+window.focusEditor = function() {
     if (window.editorAPI) {
         window.editorAPI.focus();
     }
@@ -766,3 +768,20 @@ window.rendererAPI = {
     switchToTab,
     openFolder
 };
+
+// Status bar management
+function updateStatus(message) {
+    const statusText = document.getElementById('status-text');
+    if (statusText) {
+        statusText.textContent = message;
+    }
+}
+
+function initializeTheme() {
+    // Example: Set a default theme
+    const theme = 'dark'; // or 'light'
+    document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
+    if (window.editorAPI) {
+        window.editorAPI.setTheme(theme);
+    }
+}

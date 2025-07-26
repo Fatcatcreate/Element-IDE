@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   selectFolder: () => ipcRenderer.invoke('select-folder'),
   renameFile: (oldPath, newName) => ipcRenderer.invoke('rename-file', { oldPath, newName }),
   deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
+  exportToBrowser: (htmlContent, filePath) => ipcRenderer.invoke('export-to-browser', { htmlContent, filePath }),
   
   
   // Python operations

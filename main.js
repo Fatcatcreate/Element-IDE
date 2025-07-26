@@ -14,10 +14,10 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: false,
-      contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
-
+      nodeIntegration: false, // Keep this false for security
+      contextIsolation: true, // Keep this true for security
+      preload: path.join(__dirname, 'preload.js'),
+      webSecurity: false // Required for iframe blob URLs and local HTTP server
     },
     icon: path.join(__dirname, 'jib_rounded2.png'), // Add your icon
     show: false
@@ -451,6 +451,45 @@ ipcMain.handle('terminal-input', (event, { terminalId, input }) => {
         return { success: true };
     }
     return { success: false, error: 'Terminal not found' };
+});
+
+// IPC handler for exporting to browser
+ipcMain.handle('export-to-browser', async (event, { htmlContent, filePath }) => {
+    const { shell } = require('electron');
+    const http = require('http');
+    const fs = require('fs');
+    const path = require('path');
+    const mime = require('mime-types');
+
+    const server = http.createServer((req, res) => {
+        if (req.url === '/') {
+            res.writeHead(200, { 'Content-Type': 'text/html' });
+            res.end(htmlContent);
+        } else {
+            const requestedPath = path.join(path.dirname(filePath), req.url);
+            fs.readFile(requestedPath, (err, data) => {
+                if (err) {
+                    res.writeHead(404);
+                    res.end('Not Found');
+                } else {
+                    const contentType = mime.lookup(requestedPath) || 'application/octet-stream';
+                    res.writeHead(200, { 'Content-Type': contentType });
+                    res.end(data);
+                }
+            });
+        }
+    });
+
+    return new Promise((resolve) => {
+        server.listen(0, () => {
+            const port = server.address().port;
+            shell.openExternal(`http://localhost:${port}`);
+            setTimeout(() => {
+                server.close();
+            }, 30000); // Close server after 30 seconds
+            resolve({ success: true });
+        });
+    });
 });
 
 

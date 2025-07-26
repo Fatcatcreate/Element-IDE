@@ -126,10 +126,25 @@ function exposeEditorAPI() {
     // Expose editor functions to global scope
     window.editorAPI = {
         getContent: () => editor.getValue(),
-        setContent: (content) => {
+        setContent: (content, filename) => {
             editor.setValue(content);
             isContentModified = false;
             updateTitle();
+
+            // Determine language based on file extension
+            let language = 'python'; // default
+            if (filename) {
+                if (filename.endsWith('.html')) {
+                    language = 'html';
+                } else if (filename.endsWith('.css')) {
+                    language = 'css';
+                } else if (filename.endsWith('.js')) {
+                    language = 'javascript';
+                } else if (filename.endsWith('.py')) {
+                    language = 'python';
+                }
+            }
+            monaco.editor.setModelLanguage(editor.getModel(), language);
         },
         getCurrentPath: () => currentFilePath,
         setCurrentPath: (path) => {
@@ -188,6 +203,9 @@ function exposeEditorAPI() {
         },
         selectAll: () => {
             editor.getAction('editor.action.selectAll').run();
+        },
+        onContentDidChange: (callback) => {
+            editor.onDidChangeModelContent(callback);
         }
     };
 }

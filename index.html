@@ -448,8 +448,46 @@
             flex-shrink: 0;
         }
 
+        #live-preview-btn {
+            background-color: #0e639c;
+            color: white;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            display: none; /* Hidden by default */
+            align-items: center;
+            gap: 5px;
+        }
+        #live-preview-btn:hover { background-color: #1177bb; }
 
-
+        #preview-container {
+            flex: 1;
+            border-top: 1px solid #3c3c3c; 
+            display: none; 
+            flex-direction: column;
+        }
+        #preview-toolbar { 
+            height: 30px; 
+            background-color: #2d2d30; 
+            border-bottom: 1px solid #3c3c3c; 
+            display: flex; 
+            align-items: center; 
+            padding: 0 10px;
+            flex-shrink: 0;
+        }
+        #export-btn { 
+            background-color: #28a745; 
+            color: white; 
+            border: none; 
+            border-radius: 3px; 
+            cursor: pointer; 
+            font-size: 12px;
+            padding: 4px 8px;
+        }
+        #export-btn:hover { background-color: #218838; }
+        #preview-frame { flex: 1; border: none; background-color: white; }
     </style>
 </head>
 <body>
@@ -497,6 +535,7 @@
                         <i class="fas fa-trash"></i>
                         Clear
                     </button>
+                    <button id="live-preview-btn">Live Preview</button>
                     <div class="current-file" id="current-file">
                         untitled.py
                     </div>
@@ -537,6 +576,17 @@
                     </div>
                 </div>
             </div>
+
+            <div class="resize-handle vertical-handle" data-direction="horizontal"></div>
+
+            <div id="preview-container" style="width: 400px; display: none; flex-direction: column;">
+                <div id="preview-toolbar">
+                    <button id="export-btn">Export to Browser</button>
+                    <span style="margin-left: 10px; font-size: 12px; color: #ccc;">Live Preview</span>
+                </div>
+                <iframe id="preview-frame"></iframe>
+            </div>
+
         </div>
     </div>
 
@@ -555,6 +605,7 @@
     <script src="code_runner.js"></script>
     <script src="linter.js"></script>
     <script src="renderer.js"></script>
+    <script src="live-preview.js"></script>
     <script src="https://unpkg.com/split.js/dist/split.min.js"></script>
 </body>
 </html>

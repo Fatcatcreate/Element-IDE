@@ -1,9 +1,19 @@
 const { app, BrowserWindow, Menu, dialog, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs-extra');
-const { spawn } = require('child_process');
+const { spawn, execSync } = require('child_process');
 const pty = require('node-pty');
 const os = require('os');
+
+// Set the PATH environment variable
+if (process.platform === 'darwin') {
+  try {
+    const shellPath = execSync('echo $PATH', { shell: '/bin/bash' }).toString().trim();
+    process.env.PATH = shellPath;
+  } catch (error) {
+    console.error('Failed to set PATH:', error);
+  }
+}
 
 let mainWindow;
 global.terminals = {};
@@ -257,13 +267,15 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
     const tempDir = os.tmpdir();
     const tempFile = path.join(tempDir, `code_runner_temp_${Date.now()}${config.extensions[0]}`);
 
+    const command = language === 'python' ? '/Users/adityabhimalingam/.pyenv/versions/3.10.13/bin/python' : '/opt/homebrew/bin/node';
+
     fs.writeFile(tempFile, code, 'utf-8', (writeErr) => {
         if (writeErr) {
             resolve({ success: false, error: writeErr.message, exitCode: 1 });
             return;
         }
 
-        const codeProcess = spawn(config.command, [tempFile], {
+        const codeProcess = spawn(command, [tempFile], {
             cwd: filePath ? path.dirname(filePath) : __dirname
         });
 
@@ -323,7 +335,7 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
       }
       
       // Try to use pylint first, fallback to pyflakes
-      const lintProcess = spawn('python3', ['-m', 'pylint', '--output-format=json', actualFilePath], {
+      const lintProcess = spawn('/Users/adityabhimalingam/.pyenv/versions/3.10.13/bin/python', ['-m', 'pylint', '--output-format=json', actualFilePath], {
         cwd: filePath ? path.dirname(filePath) : __dirname
       });
       
@@ -497,7 +509,12 @@ ipcMain.handle('export-to-browser', async (event, { htmlContent, filePath }) => 
 //app.whenReady().then(createWindow);
 
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  if (process.platform === 'darwin') {
+    const fixPath = (await import('fix-path')).default;
+    fixPath();
+  }
+
   // ✅ Set icon for macOS Dock
   if (process.platform === 'darwin') {
     const iconPath = path.join(__dirname, 'jib_rounded2.png');

@@ -430,14 +430,29 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
 ipcMain.handle('spawn-terminal', (event, { cwd }) => {
     const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
     const args = os.platform() === 'win32' ? [] : ['--login'];
+
+    // Determine a safe and valid CWD
+    let safeCwd = os.homedir(); // Default to home directory
+    if (cwd) {
+        const resolvedPath = path.resolve(cwd);
+        try {
+            // fs-extra's statSync is what we need
+            if (fs.statSync(resolvedPath).isDirectory()) {
+                safeCwd = resolvedPath;
+            }
+        } catch (e) {
+            // ignore errors, CWD will be homedir
+            console.error(`Error setting terminal CWD: ${e.message}. Falling back to home directory.`);
+        }
+    }
+
     const terminal = pty.spawn(shell, args, {
         name: 'xterm-color',
         cols: 80,
         rows: 30,
-        cwd: cwd || process.cwd(),
+        cwd: safeCwd,
         env: {
-            ...process.env,
-            PS1: '\\u@\\h:\\w$ '
+            ...process.env
         }
     });
     
@@ -463,6 +478,10 @@ ipcMain.handle('terminal-input', (event, { terminalId, input }) => {
         return { success: true };
     }
     return { success: false, error: 'Terminal not found' };
+});
+
+ipcMain.handle('getHomeDir', () => {
+  return os.homedir();
 });
 
 // IPC handler for exporting to browser

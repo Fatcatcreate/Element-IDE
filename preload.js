@@ -22,12 +22,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   lintPython: (code, path) => ipcRenderer.invoke('lint-python', { code, path }),
   
   // Terminal API
-  spawnTerminal: (command, args, cwd) => ipcRenderer.invoke('spawn-terminal', { command, args, cwd }),
+  spawnTerminal: (options) => ipcRenderer.invoke('spawn-terminal', options),
   terminalInput: (data) => ipcRenderer.invoke('terminal-input', data),
   killTerminal: (terminalId) => ipcRenderer.invoke('kill-terminal', terminalId),
   onTerminalOutput: (callback) => ipcRenderer.on('terminal-output', callback),
   onTerminalError: (callback) => ipcRenderer.on('terminal-error', callback),
   onTerminalClosed: (callback) => ipcRenderer.on('terminal-closed', callback),
+  getHomeDir: () => ipcRenderer.invoke('getHomeDir'),
 
   // Menu event listeners
   onNewFile: (callback) => ipcRenderer.on('menu-new-file', callback),

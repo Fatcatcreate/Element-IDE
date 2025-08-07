@@ -605,25 +605,20 @@ function switchToTab(tabName) {
 
 
 async function createNewTerminal() {
-    console.log('createNewTerminal called');
-    const cwd = currentProject || '.';
-    console.log('Using cwd:', cwd);
-
+    const cwd = currentExplorerPath || currentProject || await window.electronAPI.getHomeDir();
     try {
         const result = await window.electronAPI.spawnTerminal({ cwd });
-        console.log('spawnTerminal result:', result);
         if (result.success) {
             currentTerminalId = result.terminalId;
-            console.log('Terminal created with ID:', currentTerminalId);
             switchToTab('terminal');
             document.getElementById('terminal-output').innerHTML = '';
             appendToTerminal(`Terminal started (ID: ${currentTerminalId})\n`);
             updateStatus('Terminal started');
         } else {
-            console.error('Failed to create terminal:', result);
+            appendToTerminal(`Failed to create terminal: ${result.error}\n`, 'error');
         }
     } catch (error) {
-        console.error('Error creating terminal:', error);
+        appendToTerminal(`Error creating terminal: ${error.message}\n`, 'error');
     }
 }
 

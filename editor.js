@@ -24,8 +24,8 @@ function setupMonaco() {
     require(['vs/editor/editor.main'], function() {
         // Create the editor
         editor = monaco.editor.create(document.getElementById('editor'), {
-            value: `# Welcome to Python IDE
-# Write your Python code here
+            value: `# Welcome to My IDE
+# Write all your code here
 # Press New terminal in the Terminal tab to start terminal
 # You can resize the panel sizes by dragging the borders
 

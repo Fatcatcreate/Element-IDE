@@ -34,7 +34,7 @@ jobs:
         shell: bash
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
-            npm run build -- --win --x64
+            npm run build -- --win --x64 --publish=never
           elif [ "${{ runner.os }}" == "macOS" ]; then
             npm run build -- --mac
           elif [ "${{ runner.os }}" == "Linux" ]; then

@@ -267,7 +267,7 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
     const tempDir = os.tmpdir();
     const tempFile = path.join(tempDir, `code_runner_temp_${Date.now()}${config.extensions[0]}`);
 
-    const command = language === 'python' ? '/Users/adityabhimalingam/.pyenv/versions/3.10.13/bin/python' : '/opt/homebrew/bin/node';
+    const command = config.command;
 
     fs.writeFile(tempFile, code, 'utf-8', (writeErr) => {
         if (writeErr) {
@@ -275,9 +275,12 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
             return;
         }
 
-        const codeProcess = spawn(command, [tempFile], {
-            cwd: filePath ? path.dirname(filePath) : __dirname
-        });
+        const { fork, spawn } = require('child_process');
+        const codeProcess = language === 'javascript' 
+            ? fork(tempFile, [], { silent: true })
+            : spawn(command, [tempFile], {
+                cwd: filePath ? path.dirname(filePath) : __dirname
+              });
 
         let stdout = '';
         let stderr = '';
@@ -335,7 +338,7 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
       }
       
       // Try to use pylint first, fallback to pyflakes
-      const lintProcess = spawn('/Users/adityabhimalingam/.pyenv/versions/3.10.13/bin/python', ['-m', 'pylint', '--output-format=json', actualFilePath], {
+      const lintProcess = spawn('python3', ['-m', 'pylint', '--output-format=json', actualFilePath], {
         cwd: filePath ? path.dirname(filePath) : __dirname
       });
       

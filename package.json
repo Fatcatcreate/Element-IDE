@@ -7,7 +7,8 @@
     "start": "electron .",
     "dev": "electron . --dev",
     "build": "electron-builder",
-    "dist": "electron-builder --publish=never"
+    "dist": "electron-builder --publish=never",
+    "postinstall": "electron-builder install-app-deps"
   },
   "keywords": [
     "electron",
@@ -30,7 +31,9 @@
     "node-pty": "^1.0.0"
   },
   "build": {
+    "asar": false,
     "productName": "Python IDE",
+    
     "directories": {
       "output": "dist"
     },
@@ -48,6 +51,7 @@
       "!**/{appveyor.yml,.travis.yml,circle.yml}",
       "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
     ],
+    
     "mac": {
       "category": "public.app-category.developer-tools",
       "icon": "icon2.icns"
@@ -55,6 +59,10 @@
     "win": {
       "target": "nsis",
       "icon": "icon.ico"
+    },
+    "nsis": {
+      "perMachine": true,
+      "allowElevation": true
     },
     "linux": {
       "target": "AppImage",

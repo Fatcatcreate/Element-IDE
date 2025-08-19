@@ -2,7 +2,7 @@
 module.exports = {
     python: {
         extensions: ['.py'],
-        command: 'python'
+        command: 'python3'
     },
     javascript: {
         extensions: ['.js'],

@@ -1,4 +1,4 @@
-# Electron Python IDE: A Lightweight, Cross-Platform Code Editor
+# Element-IDE: A Lightweight, Cross-Platform Code Editor
 *Edit, Run, and Lint Python Code in a Modern Environment*
 
 ---
@@ -17,7 +17,7 @@
 ---
 
 ## Introduction
-Electron Python IDE is a lightweight, cross-platform code editor built from the ground up with Electron. It's designed for developers who need a simple but effective tool for writing, running, and linting Python code without the overhead of a full-scale IDE. It bundles a file explorer, the powerful Monaco editor, live code output, and an integrated terminal into a single, cohesive application.
+Element-IDE is a lightweight, cross-platform code editor built from the ground up with Electron. It's designed for developers who need a simple but effective tool for writing, running, and linting Python code without the overhead of a full-scale IDE. It bundles a file explorer, the powerful Monaco editor, live code output, and an integrated terminal into a single, cohesive application.
 
 The project's motivation was to create a self-contained development environment that streamlines the workflow for quick scripts and smaller projects, removing the need to juggle a separate editor, terminal, and file manager.
 
@@ -57,12 +57,35 @@ Running `npm install` also executes the `postinstall` script (`electron-builder 
 
 ---
 
+## Development
+
+To set up the development environment and run the application in development mode, follow these steps:
+
+1.  **Clone the repository:**
+    ```bash
+    git clone https://github.com/Fatcatcreate/IDE.git
+    cd IDE
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Run in development mode:**
+    ```bash
+    npm run dev
+    ```
+    This will start the application with the Chromium developer tools enabled.
+
+---
+
 ## Usage
 ### Running the Application
 To launch the IDE in development mode:
 
 ```bash
-npm start
+npm run dev
 ```
 This starts the application with access to the Chromium developer tools, available under the "View" menu.
 
@@ -75,53 +98,90 @@ This starts the application with access to the Chromium developer tools, availab
 
 ---
 
-## Architectural Deep Dive: How It Works
-The IDE's design leverages Electron's core multi-process architecture to ensure security and a responsive UI. The application is split into a backend (Main Process) and a frontend (Renderer Process), which communicate securely.
+## How It Works: An Architectural Deep-Dive
 
--   **Main Process (`main.js`):** This is the application's Node.js backend. It has full OS access and is responsible for all privileged operations: creating and managing windows (`BrowserWindow`), handling all file system I/O using `fs-extra`, and spawning child processes for code execution and the terminal. Keeping this logic out of the frontend is a key security measure.
+This IDE is built on Electron, which allows us to create a cross-platform desktop application using web technologies. The application is split into two main processes, a security best practice that ensures our application is robust and secure.
 
--   **Renderer Process (`renderer.js`, `editor.js`):** This is the sandboxed frontend, handling all aspects of the user interface. It runs in a standard Chromium browser environment with no direct access to Node.js or the file system, preventing security risks.
+### The Main Process (`main.js`)
 
--   **Preload Script (`preload.js`):** This script is the secure bridge between the two processes. It uses Electron's `contextBridge` to expose a well-defined API from the main process to the renderer. This prevents the renderer from gaining arbitrary access to the main process, enforcing the principle of least privilege.
+The Main process is the backbone of the application. It runs in a Node.js environment, which means it has full access to the operating system's resources. This is where all the "heavy lifting" happens:
+
+*   **Window Management:** The Main process is responsible for creating and managing the application's windows using Electron's `BrowserWindow` module.
+*   **File System Operations:** All interactions with the file system, such as reading, writing, and deleting files, are handled by the Main process using the `fs-extra` module. This is a critical security measure that prevents the user-facing part of the application from having direct access to the file system.
+*   **Code Execution and Terminal:** The Main process spawns child processes to run user code and to create the integrated terminal. This is done using the `child_process` and `node-pty` modules.
+
+### The Renderer Process (`renderer.js`, `editor.js`, etc.)
+
+The Renderer process is the user-facing part of the application. It's essentially a sandboxed web page that runs in a Chromium browser environment. This is where all the UI is rendered and where user interactions are handled.
+
+For security reasons, the Renderer process does not have direct access to Node.js or the file system. This is a key security feature of Electron that prevents malicious code from accessing the user's system.
+
+### The Preload Script (`preload.js`)
+
+So, how do the Main and Renderer processes communicate? That's where the Preload script comes in. The Preload script is a special script that runs in a privileged environment before the Renderer process is loaded. It has access to both the `window` object of the Renderer process and the Node.js environment of the Main process.
+
+We use the `contextBridge` module to securely expose a well-defined API from the Main process to the Renderer process. This API, which we call `electronAPI`, acts as a secure bridge between the two processes, allowing the Renderer to request services from the Main process without gaining arbitrary access to it.
 
 ### Feature Implementation Details
 
--   **Code Execution Engine:**
-    1.  When a user triggers a run, the renderer grabs the current code from Monaco.
-    2.  It uses the `electronAPI` (exposed by the preload script) to send the code to the main process.
-    3.  The main process writes the code to a temporary file in the system's temp directory (`os.tmpdir()`). This avoids needing to save the file to run it and keeps the execution self-contained.
-    4.  A child process is spawned using `child_process.spawn`, with the command (`python` or `node`) chosen based on the file's extension.
-    5.  The `cwd` (current working directory) of the new process is explicitly set to the directory of the file being edited. This is critical for ensuring that any relative paths in the user's code (e.g., `open('data.txt')`) resolve as expected.
-    6.  The `stdout` and `stderr` streams from the child process are piped back to the renderer via IPC and displayed with distinct styling.
-    7.  After execution, the temporary file is deleted to ensure no artifacts are left behind.
+Here's a closer look at how some of the key features are implemented:
 
--   **Integrated Pseudo-Terminal:**
-    1.  The terminal is implemented with `node-pty`, a library that emulates a native terminal, allowing for a fully interactive shell.
-    2.  When a new terminal is requested, the renderer sends an IPC message with the current working directory.
-    3.  The main process then spawns a `pty` process, launching the user's default shell (`bash`, `zsh`, `powershell`, etc.).
-    4.  A two-way communication channel is established:
-        -   **Output:** The `pty` process's data stream is captured in the main process and relayed to the renderer to be written to the terminal UI.
-        -   **Input:** User input from the terminal UI is sent to the main process, which writes it directly to the `pty` process's input stream.
-    5.  This architecture creates a true, stateful shell, not just a simple command-and-response executor.
+*   **Code Execution Engine:**
+    1.  When you click the "Run" button, the Renderer process gets the code from the Monaco editor.
+    2.  It then uses the `electronAPI` to send the code to the Main process.
+    3.  The Main process writes the code to a temporary file and then spawns a child process to execute it.
+    4.  The output of the child process is then piped back to the Renderer process and displayed in the output panel.
 
--   **Live HTML Preview:**
-    1.  When an HTML file is active, the editor listens for content changes via `editor.onDidChangeModelContent`.
-    2.  On each change, the renderer's JavaScript dynamically injects a `<base>` tag into the HTML content. The `href` of this tag is set to the local file path of the document (e.g., `file:///path/to/your/project/`). This is a key step that forces the browser to resolve relative links for CSS, JS, or images from the correct directory.
-    3.  The modified HTML is then converted into a `Blob`, and a temporary `Blob URL` is generated via `URL.createObjectURL`.
-    4.  This URL is set as the `src` for an `<iframe>`, which securely renders the content in a sandboxed context, isolated from the rest of the application.
+*   **Integrated Pseudo-Terminal:**
+    1.  The terminal is implemented using the `node-pty` library, which provides a pseudo-terminal interface.
+    2.  When you open a new terminal, the Renderer process sends a request to the Main process.
+    3.  The Main process then spawns a new `pty` process, which in turn launches your default shell (e.g., `bash`, `zsh`, `powershell`).
+    4.  A two-way communication channel is then established between the Renderer and the `pty` process, allowing you to interact with the shell as if you were using a native terminal.
+
+*   **Live HTML Preview:**
+    1.  When you open an HTML file, the editor listens for changes to the content.
+    2.  On each change, the Renderer process injects a `<base>` tag into the HTML, which is a neat trick that forces the browser to resolve relative paths for CSS and JavaScript files correctly.
+    3.  The modified HTML is then rendered in an `<iframe>` in the live preview panel.
 
 ---
 
 ## Building for Distribution
+
 You can build a distributable version of the application for macOS, Windows, or Linux using `electron-builder`.
 
-To create a build for your current operating system, run:
-```bash
-npm run build
-```
-The packaged application will be available in the `dist` directory.
+### macOS
 
----
+To create a build for macOS, run:
+
+```bash
+npm run build -- --mac
+```
+
+This will generate a `.dmg` file in the `dist` directory.
+
+### Linux
+
+To create a build for Linux, run:
+
+```bash
+npm run build -- --linux
+```
+
+This will generate an `AppImage` file in the `dist` directory.
+
+### Windows
+
+To create a build for Windows, run:
+
+```bash
+npm run build -- --win --x64
+```
+
+This will generate an `.exe` installer in the `dist` directory.
+
+**Note for Windows users:** The integrated terminal feature is currently not working in the Windows version of the application due to a known issue with the `node-pty` package. All other features are functional.
+
+
 
 ## Technologies Used
 - **Electron:** The core framework for building the cross-platform desktop application.
@@ -139,3 +199,17 @@ The packaged application will be available in the `dist` directory.
 - **Themes and Customization:** Allow users to customize the editor theme and overall appearance.
 - **Plugin System:** Develop a plugin architecture to allow for community-developed extensions and features.
 - **Enhanced Language Support:** Improve support for other languages with features like IntelliSense and code completion.
+
+---
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a pull request or open an issue.
+
+### Known Issues
+
+*   **Windows Terminal:** The integrated terminal feature is currently not working on Windows due to a known issue with the `node-pty` package. Any help in resolving this issue would be greatly appreciated.

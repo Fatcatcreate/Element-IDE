@@ -1,11 +1,8 @@
-// Monaco Editor Setup
 let editor;
 let currentFilePath = null;
 let isContentModified = false;
 
-// Initialize Monaco Editor
 function initializeEditor() {
-    // Load Monaco Editor from CDN
     const script = document.createElement('script');
     script.src = 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.js';
     script.onload = () => {
@@ -22,9 +19,8 @@ function setupMonaco() {
     });
     
     require(['vs/editor/editor.main'], function() {
-        // Create the editor
         editor = monaco.editor.create(document.getElementById('editor'), {
-            value: `# Welcome to My IDE
+            value: `# Welcome to Element IDE
 # Write all your code here
 # Press New terminal in the Terminal tab to start terminal
 # You can resize the panel sizes by dragging the borders
@@ -64,13 +60,10 @@ if __name__ == "__main__":
             mouseWheelZoom: true
         });
         
-        // Setup editor event listeners
         setupEditorEventListeners();
         
-        // Setup keyboard shortcuts
         setupKeyboardShortcuts();
         
-        // Expose editor API to global scope
         exposeEditorAPI();
         
         console.log('Monaco Editor initialized successfully');
@@ -78,25 +71,21 @@ if __name__ == "__main__":
 }
 
 function setupEditorEventListeners() {
-    // Track content changes
     editor.onDidChangeModelContent(() => {
         isContentModified = true;
         updateTitle();
     });
     
-    // Handle cursor position changes
     editor.onDidChangeCursorPosition((e) => {
         updateCursorPosition(e.position);
     });
     
-    // Handle selection changes
     editor.onDidChangeCursorSelection((e) => {
         updateSelectionInfo(e.selection);
     });
 }
 
 function setupKeyboardShortcuts() {
-    // Add custom keyboard shortcuts
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
         if (window.rendererAPI) {
             window.rendererAPI.saveFile();
@@ -123,7 +112,6 @@ function setupKeyboardShortcuts() {
 }
 
 function exposeEditorAPI() {
-    // Expose editor functions to global scope
     window.editorAPI = {
         getContent: () => editor.getValue(),
         setContent: (content, filename) => {
@@ -131,8 +119,7 @@ function exposeEditorAPI() {
             isContentModified = false;
             updateTitle();
 
-            // Determine language based on file extension
-            let language = 'python'; // default
+            let language = 'python';
             if (filename) {
                 if (filename.endsWith('.html')) {
                     language = 'html';
@@ -215,9 +202,8 @@ function updateTitle() {
         currentFilePath.split('/').pop().split('\\').pop() : 
         'Untitled';
     const modified = isContentModified ? ' •' : '';
-    document.title = `${filename}${modified} - Python IDE`;
+    document.title = `${filename}${modified} - Element-IDE`;
     
-    // Update status bar if it exists
     updateFileStatus();
 }
 
@@ -257,7 +243,6 @@ function updateFileStatus() {
     }
 }
 
-// Auto-save functionality
 function startAutoSave() {
     setInterval(() => {
         if (isContentModified && currentFilePath && window.electronAPI) {
@@ -273,12 +258,10 @@ function startAutoSave() {
                     console.error('Auto-save failed:', error);
                 });
         }
-    }, 30000); // Auto-save every 30 seconds
+    }, 30000);
 }
 
-// Language features
 function setupLanguageFeatures() {
-    // Add Python snippets
     monaco.languages.registerCompletionItemProvider('python', {
         provideCompletionItems: (model, position) => {
             const suggestions = [
@@ -338,25 +321,21 @@ function setupLanguageFeatures() {
     });
 }
 
-// Initialize when DOM is ready
 document.addEventListener('DOMContentLoaded', () => {
     initializeEditor();
     
-    // Start auto-save after a delay
     setTimeout(() => {
         startAutoSave();
         setupLanguageFeatures();
     }, 2000);
 });
 
-// Handle window resize
 window.addEventListener('resize', () => {
     if (editor) {
         editor.layout();
     }
 });
 
-// Export for global access
 window.editorModule = {
     initializeEditor,
     setupLanguageFeatures,

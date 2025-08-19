@@ -24,28 +24,25 @@ function createWindow() {
     width: 1200,
     height: 800,
     webPreferences: {
-      nodeIntegration: false, // Keep this false for security
-      contextIsolation: true, // Keep this true for security
+      nodeIntegration: false,
+      contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false // Required for iframe blob URLs and local HTTP server
+      webSecurity: false
     },
-    icon: path.join(__dirname, 'jib_rounded2.png'), // Add your icon
+    icon: path.join(__dirname, 'jib_rounded2.png'),
     show: false
   });
 
   mainWindow.loadFile('index.html');
 
-  // Show window when ready to prevent visual flash
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
   });
 
-  // Open DevTools in development
   if (process.argv.includes('--dev')) {
     mainWindow.webContents.openDevTools();
   }
 
-  // Create application menu
   createMenu();
 }
 
@@ -155,12 +152,10 @@ function createMenu() {
   Menu.setApplicationMenu(menu);
 }
 
-// IPC handlers for file operations
 ipcMain.handle('save-file', async (event, { path, content }) => {
   try {
     await fs.writeFile(path, content, 'utf-8');
     
-    // Notify renderer that file was saved - send the directory path
     const dirPath = require('path').dirname(path);
     mainWindow.webContents.send('file-saved', { filePath: path, dirPath });
     
@@ -173,19 +168,17 @@ ipcMain.handle('save-file', async (event, { path, content }) => {
 ipcMain.handle('save-file-as', async (event, content) => {
   const result = await dialog.showSaveDialog(mainWindow, {
     filters: [
-      //{ name: 'Python Files', extensions: ['py'] },
       { name: 'All Files', extensions: ['*'] }
     ]
   });
-  
+
   if (!result.canceled) {
     try {
       await fs.writeFile(result.filePath, content, 'utf-8');
-      
-      // Notify renderer that file was saved - send the directory path
+
       const dirPath = require('path').dirname(result.filePath);
       mainWindow.webContents.send('file-saved', { filePath: result.filePath, dirPath });
-      
+
       return { success: true, path: result.filePath };
     } catch (error) {
       return { success: false, error: error.message };
@@ -246,7 +239,6 @@ ipcMain.handle('delete-file', async (event, filePath) => {
   }
 });''
 
-// IPC handler for code execution
 ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
   return new Promise((resolve) => {
     const { spawn } = require('child_process');
@@ -294,7 +286,7 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
         });
 
         codeProcess.on('close', (code) => {
-            fs.unlink(tempFile, () => {}); // Clean up temp file
+            fs.unlink(tempFile, () => {});
             resolve({
                 success: true,
                 stdout: stdout,
@@ -304,7 +296,7 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
         });
 
         codeProcess.on('error', (error) => {
-            fs.unlink(tempFile, () => {}); // Clean up temp file
+            fs.unlink(tempFile, () => {});
             resolve({
                 success: false,
                 error: error.message,
@@ -315,13 +307,11 @@ ipcMain.handle('run-code', async (event, { code, path: filePath }) => {
   });
 });
 
-// IPC handler for Python linting
 ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
   return new Promise((resolve) => {
     let stdout = '';
     let stderr = '';
     
-    // Create a temporary file if no file path is provided
     let tempFile = null;
     let actualFilePath = filePath;
     
@@ -330,14 +320,12 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
       actualFilePath = tempFile;
     }
     
-    // Write code to file
     fs.writeFile(actualFilePath, code, 'utf-8', (writeErr) => {
       if (writeErr) {
         resolve({ success: false, error: writeErr.message });
         return;
       }
       
-      // Try to use pylint first, fallback to pyflakes
       const lintProcess = spawn('python3', ['-m', 'pylint', '--output-format=json', actualFilePath], {
         cwd: filePath ? path.dirname(filePath) : __dirname
       });
@@ -351,9 +339,8 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
       });
       
       lintProcess.on('close', (code) => {
-        // Clean up temp file
         if (tempFile) {
-          fs.unlink(tempFile, () => {}); // Ignore errors
+          fs.unlink(tempFile, () => {});
         }
         
         try {
@@ -376,7 +363,6 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
             issues: issues
           });
         } catch (parseError) {
-          // If pylint fails, try basic syntax check
           const syntaxProcess = spawn('python3', ['-m', 'py_compile', actualFilePath]);
           
           syntaxProcess.on('close', (syntaxCode) => {
@@ -402,12 +388,10 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
       });
       
       lintProcess.on('error', (error) => {
-        // Clean up temp file
         if (tempFile) {
-          fs.unlink(tempFile, () => {}); // Ignore errors
+          fs.unlink(tempFile, () => {});
         }
         
-        // Fallback to basic syntax check
         const syntaxProcess = spawn('python3', ['-c', `compile(open('${actualFilePath}').read(), '${actualFilePath}', 'exec')`]);
         
         syntaxProcess.on('close', (syntaxCode) => {
@@ -429,22 +413,18 @@ ipcMain.handle('lint-python', async (event, { code, path: filePath }) => {
 
 
 
-// Terminal IPC handlers
 ipcMain.handle('spawn-terminal', (event, { cwd }) => {
     const shell = os.platform() === 'win32' ? 'powershell.exe' : 'bash';
     const args = os.platform() === 'win32' ? [] : ['--login'];
 
-    // Determine a safe and valid CWD
-    let safeCwd = os.homedir(); // Default to home directory
+    let safeCwd = os.homedir();
     if (cwd) {
         const resolvedPath = path.resolve(cwd);
         try {
-            // fs-extra's statSync is what we need
             if (fs.statSync(resolvedPath).isDirectory()) {
                 safeCwd = resolvedPath;
             }
         } catch (e) {
-            // ignore errors, CWD will be homedir
             console.error(`Error setting terminal CWD: ${e.message}. Falling back to home directory.`);
         }
     }
@@ -487,7 +467,6 @@ ipcMain.handle('getHomeDir', () => {
   return os.homedir();
 });
 
-// IPC handler for exporting to browser
 ipcMain.handle('export-to-browser', async (event, { htmlContent, filePath }) => {
     const { shell } = require('electron');
     const http = require('http');
@@ -520,15 +499,14 @@ ipcMain.handle('export-to-browser', async (event, { htmlContent, filePath }) => 
             shell.openExternal(`http://localhost:${port}`);
             setTimeout(() => {
                 server.close();
-            }, 30000); // Close server after 30 seconds
+            }, 30000);
             resolve({ success: true });
         });
     });
 });
 
 
-// App event handlers
-//app.whenReady().then(createWindow);
+
 
 
 app.whenReady().then(async () => {
@@ -537,7 +515,6 @@ app.whenReady().then(async () => {
     fixPath();
   }
 
-  // ✅ Set icon for macOS Dock
   if (process.platform === 'darwin') {
     const iconPath = path.join(__dirname, 'jib_rounded2.png');
     app.dock.setIcon(iconPath);
@@ -559,7 +536,6 @@ app.on('activate', () => {
   }
 });
 
-// Handle certificate errors
 app.on('certificate-error', (event, webContents, url, error, certificate, callback) => {
   event.preventDefault();
   callback(true);

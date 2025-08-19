@@ -1,5 +1,4 @@
 document.addEventListener('DOMContentLoaded', function() {
-    // Live Preview functionality
     const livePreviewBtn = document.getElementById('live-preview-btn');
     const exportBtn = document.getElementById('export-btn');
     const previewContainer = document.getElementById('preview-container');
@@ -34,14 +33,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const url = URL.createObjectURL(blob);
             previewFrame.src = url;
             
-            // Clean up previous blob URL
             setTimeout(() => {
                 URL.revokeObjectURL(url);
             }, 1000);
         }
     }
 
-    // Export to browser functionality
     exportBtn.addEventListener('click', function() {
         if (currentHtmlFile) {
             const htmlContent = getEditorContent();
@@ -50,19 +47,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Function to show/hide live preview button based on file type
     function updateLivePreviewButton(filename) {
         currentHtmlFile = filename;
         if (filename && filename.endsWith('.html')) {
             livePreviewBtn.style.display = 'block';
-        } else {
+        }
+        else {
             livePreviewBtn.style.display = 'none';
             previewContainer.style.display = 'none';
             livePreviewBtn.textContent = 'Live Preview';
         }
     }
 
-    // Preview panel resizing logic
     let isResizingPreview = false;
     const resizeHandle = previewContainer.previousElementSibling;
 
@@ -86,7 +82,6 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Expose functions to be called from renderer.js
     window.livePreviewAPI = {
         updateLivePreviewButton,
         updatePreview

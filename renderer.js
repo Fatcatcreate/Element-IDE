@@ -2,13 +2,10 @@ let currentProject = null;
 let currentExplorerPath = null;
 let fileExplorerData = [];
 let currentTerminalId = null;
-// Add these variables at the top of renderer.js
 
 let contextMenu = null;
 let contextMenuTarget = null;
 
-
-// Initialize the application
 document.addEventListener('DOMContentLoaded', function() {
     contextMenu = document.getElementById('context-menu');
     setupEventListeners();
@@ -18,15 +15,12 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeTheme();
     console.log('Python IDE initialized');
 
-
-    // Hide context menu on click outside
     window.addEventListener('click', () => {
         hideContextMenu();
     });
 });
 
 function setupEventListeners() {
-    // Toolbar buttons
     document.getElementById('new-file').addEventListener('click', newFile);
     document.getElementById('save-file').addEventListener('click', saveFile);
     document.getElementById('run-code').addEventListener('click', () => runCode());
@@ -37,15 +31,12 @@ function setupEventListeners() {
     document.getElementById('new-terminal').addEventListener('click', createNewTerminal);
     document.getElementById('terminal-input').addEventListener('keydown', handleTerminalInput);
     
-    // Keyboard shortcuts
     document.addEventListener('keydown', handleKeyboardShortcuts);
     
-    // Window events
     window.addEventListener('beforeunload', handleBeforeUnload);
 }
 
 function setupMenuEventListeners() {
-    // Menu event listeners from main process (only if electronAPI exists)
     if (window.electronAPI) {
         window.electronAPI.onNewFile(() => newFile());
         window.electronAPI.onSaveFile(() => saveFile());
@@ -56,7 +47,6 @@ function setupMenuEventListeners() {
             openFileFromPath(data.path, data.content);
         });
         
-        // ADD THIS NEW LISTENER FOR FILE SAVED EVENT
         window.electronAPI.onFileSaved((event, data) => {
             handleFileSaved(data.filePath, data.dirPath);
         });
@@ -82,17 +72,13 @@ function setupMenuEventListeners() {
     }
 }
 
-// ADD THIS NEW FUNCTION to handle file saved event
 async function handleFileSaved(filePath, dirPath) {
-    // Only refresh if the saved file is in the current project directory
     if (currentProject && dirPath.startsWith(currentProject)) {
-        // Refresh the file explorer to show the new/updated file
         await refreshFileExplorer();
         updateStatus(`File saved: ${getBasename(filePath)}`);
     }
 }
 
-// ADD THIS NEW FUNCTION to refresh the file explorer
 async function refreshFileExplorer() {
     if (currentProject) {
         await loadFileExplorer(currentProject);
@@ -106,7 +92,6 @@ function setupTabSwitching() {
 }
 
 function handleKeyboardShortcuts(event) {
-    // Handle keyboard shortcuts that aren't handled by Monaco
     if (event.ctrlKey || event.metaKey) {
         switch (event.key) {
             case 'n':
@@ -115,7 +100,6 @@ function handleKeyboardShortcuts(event) {
                 break;
             case 'o':
                 event.preventDefault();
-                // File opening is handled by main process
                 break;
             case '`':
               if (event.ctrlKey) {
@@ -140,7 +124,6 @@ function handleBeforeUnload(event) {
     }
 }
 
-// File operations
 function newFile() {
     if (isModified()) {
         const save = confirm('You have unsaved changes. Do you want to save first?');
@@ -161,23 +144,19 @@ async function saveFile() {
     const content = getEditorContent();
     
     if (!window.electronAPI) {
-        // Fallback for non-electron environment
         updateStatus('Save functionality requires Electron environment');
         return;
     }
     
     if (currentPath) {
-        // Save to existing file
         const result = await window.electronAPI.saveFile(currentPath, content);
         if (result.success) {
             markAsSaved();
             updateStatus('File saved successfully');
-            // File explorer will be refreshed via the 'file-saved' event from main process
         } else {
             updateStatus('Failed to save file: ' + result.error);
         }
     } else {
-        // Save as new file
         saveAs();
     }
 }
@@ -186,7 +165,6 @@ async function saveAs() {
     const content = getEditorContent();
     
     if (!window.electronAPI) {
-        // Fallback for non-electron environment
         updateStatus('Save functionality requires Electron environment');
         return;
     }
@@ -197,14 +175,12 @@ async function saveAs() {
         setCurrentFilePath(result.path);
         markAsSaved();
         updateStatus('File saved successfully');
-        // File explorer will be refreshed via the 'file-saved' event from main process
     } else if (result.error) {
         updateStatus('Failed to save file: ' + result.error);
     }
 }
 async function openFolder() {
     if (!window.electronAPI) {
-        // Fallback for non-electron environment
         updateStatus('File system access requires Electron environment');
         return;
     }
@@ -247,7 +223,6 @@ function renderFileExplorer(items) {
         return;
     }
 
-    // Sort items: directories first, then files
     const sortedItems = items.sort((a, b) => {
         if (a.isDirectory && !b.isDirectory) return -1;
         if (!a.isDirectory && b.isDirectory) return 1;
@@ -353,7 +328,7 @@ async function renameFile(filePath) {
 
     const handleRename = async () => {
         const newName = input.value.trim();
-        input.replaceWith(nameSpan); // Restore original span
+        input.replaceWith(nameSpan);
 
         if (newName && newName !== currentName) {
             const result = await window.electronAPI.renameFile(filePath, newName);
@@ -364,7 +339,7 @@ async function renameFile(filePath) {
                 updateStatus(`Error renaming file: ${result.error}`);
             }
         } else {
-            refreshFileExplorer(); // Restore if name is unchanged or empty
+            refreshFileExplorer();
         }
     };
 
@@ -374,7 +349,7 @@ async function renameFile(filePath) {
             handleRename();
         } else if (e.key === 'Escape') {
             input.replaceWith(nameSpan);
-            refreshFileExplorer(); // Restore on escape
+            refreshFileExplorer();
         }
     });
 }
@@ -418,7 +393,6 @@ function openFileFromPath(filePath, content) {
     updateStatus(`Opened: ${filePath}`);
     focusEditor();
 
-    // Show/hide lint button based on file type
     const lintButton = document.getElementById('lint-code');
     if (filePath.endsWith('.py')) {
         lintButton.style.display = 'inline-block';
@@ -439,7 +413,6 @@ function openFileFromPath(filePath, content) {
     }
 }
 
-// Code execution and linting
 async function runCode(code = null) {
     const codeToRun = code || getEditorContent();
     const currentPath = getCurrentFilePath();
@@ -458,17 +431,14 @@ async function runCode(code = null) {
     }
     
     if (!window.electronAPI) {
-        // Fallback for non-electron environment
         appendToOutput('Code execution requires Electron environment\n', 'error');
         updateStatus('Code execution requires Electron environment');
         return;
     }
     
-    // Clear previous output
     clearOutput();
     switchToTab('output');
     
-    // Show running status
     updateStatus('Running code...');
     appendToOutput('Running code...\n', 'info');
     
@@ -490,7 +460,6 @@ async function runCode(code = null) {
             updateStatus('Code executed successfully');
         }
         
-        // Show exit code
         appendToOutput(`\nProcess exited with code: ${result.exitCode}\n`, 'info');
         
     } catch (error) {
@@ -509,17 +478,14 @@ async function lintCode() {
     }
     
     if (!window.electronAPI) {
-        // Fallback for non-electron environment
         appendToProblems('Linting requires Electron environment\n', 'error');
         updateStatus('Linting requires Electron environment');
         return;
     }
     
-    // Clear previous problems
     clearProblems();
     switchToTab('problems');
     
-    // Show linting status
     updateStatus('Linting Python code...');
     appendToProblems('Linting Python code...\n', 'info');
     
@@ -548,7 +514,6 @@ async function lintCode() {
     }
 }
 
-// Output and problems management
 function clearOutput() {
     const outputElement = document.getElementById('panel-output');
     if (outputElement) {
@@ -586,17 +551,14 @@ function appendToProblems(text, type = 'info') {
 }
 
 function switchToTab(tabName) {
-    // Hide all panels
     document.getElementById('panel-output').classList.add('hidden');
     document.getElementById('panel-problems').classList.add('hidden');
     document.getElementById('panel-terminal').classList.add('hidden');
 
-    // Remove active class from all tabs
     document.querySelectorAll('.panel-tab').forEach(tab => {
         tab.classList.remove('active');
     });
 
-    // Show selected panel and activate tab
     document.getElementById(`panel-${tabName}`).classList.remove('hidden');
     document.getElementById(`tab-${tabName}`).classList.add('active');
 }
@@ -648,7 +610,6 @@ function appendToTerminal(data) {
     }
 }
 
-// Editor interface functions
 window.getEditorContent = function() {
     return window.editorAPI ? window.editorAPI.getContent() : '';
 }
@@ -684,8 +645,6 @@ window.focusEditor = function() {
         window.editorAPI.focus();
     }
 }
-
-
 
 function initializeResizablePanels() {
     let isResizing = false;
@@ -747,11 +706,6 @@ function initializeResizablePanels() {
     }
 }
 
-
-
-
-
-// Export functions for use in other modules
 window.rendererAPI = {
     newFile,
     saveFile,
@@ -764,7 +718,6 @@ window.rendererAPI = {
     openFolder
 };
 
-// Status bar management
 function updateStatus(message) {
     const statusText = document.getElementById('status-text');
     if (statusText) {
@@ -773,8 +726,7 @@ function updateStatus(message) {
 }
 
 function initializeTheme() {
-    // Example: Set a default theme
-    const theme = 'dark'; // or 'light'
+    const theme = 'dark';
     document.body.className = theme === 'dark' ? 'dark-theme' : 'light-theme';
     if (window.editorAPI) {
         window.editorAPI.setTheme(theme);

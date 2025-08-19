@@ -6,7 +6,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.on('file-saved', callback);
     },
     
-  // File operations
   saveFile: (path, content) => ipcRenderer.invoke('save-file', { path, content }),
   saveFileAs: (content) => ipcRenderer.invoke('save-file-as', content),
   readDirectory: (path) => ipcRenderer.invoke('read-directory', path),
@@ -16,12 +15,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteFile: (filePath) => ipcRenderer.invoke('delete-file', filePath),
   exportToBrowser: (htmlContent, filePath) => ipcRenderer.invoke('export-to-browser', { htmlContent, filePath }),
   
-  
-  // Python operations
   runCode: (code, path) => ipcRenderer.invoke('run-code', { code, path }),
   lintPython: (code, path) => ipcRenderer.invoke('lint-python', { code, path }),
   
-  // Terminal API
   spawnTerminal: (options) => ipcRenderer.invoke('spawn-terminal', options),
   terminalInput: (data) => ipcRenderer.invoke('terminal-input', data),
   killTerminal: (terminalId) => ipcRenderer.invoke('kill-terminal', terminalId),
@@ -30,7 +26,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onTerminalClosed: (callback) => ipcRenderer.on('terminal-closed', callback),
   getHomeDir: () => ipcRenderer.invoke('getHomeDir'),
 
-  // Menu event listeners
   onNewFile: (callback) => ipcRenderer.on('menu-new-file', callback),
   onSaveFile: (callback) => ipcRenderer.on('menu-save-file', callback),
   onSaveAs: (callback) => ipcRenderer.on('menu-save-as', callback),
@@ -38,6 +33,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onLintCode: (callback) => ipcRenderer.on('menu-lint-code', callback),
   onFileOpened: (callback) => ipcRenderer.on('file-opened', callback),
   
-  // Remove listeners
   removeAllListeners: (channel) => ipcRenderer.removeAllListeners(channel)
 });

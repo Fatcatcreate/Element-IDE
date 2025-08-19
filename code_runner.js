@@ -30,24 +30,19 @@ function runCode(code = null, filePath = null) {
 
     const config = languageConfig[language];
 
-    // Switch to output tab
     switchToTab('output');
     
-    // Clear previous output
     addOutput(`Running ${language} code...`, 'info');
     addOutput('─'.repeat(50), 'info');
     
-    // Update status
     updateStatus('Running...', true);
     
-    // Create temporary file
     const tempDir = os.tmpdir();
     const tempFile = path.join(tempDir, `code_runner_temp_${Date.now()}${config.extensions[0]}`);
     
     try {
         fs.writeFileSync(tempFile, codeToRun);
         
-        // Spawn process
         currentProcess = spawn(config.command, [tempFile], {
             stdio: ['pipe', 'pipe', 'pipe'],
             shell: process.platform === 'win32'
@@ -55,22 +50,18 @@ function runCode(code = null, filePath = null) {
         
         isRunning = true;
         
-        // Handle stdout
         currentProcess.stdout.on('data', (data) => {
             addOutput(data.toString(), 'success');
         });
         
-        // Handle stderr
         currentProcess.stderr.on('data', (data) => {
             addOutput(data.toString(), 'error');
         });
         
-        // Handle process completion
         currentProcess.on('close', (code) => {
             isRunning = false;
             currentProcess = null;
             
-            // Clean up temp file
             try {
                 fs.unlinkSync(tempFile);
             } catch (e) {
@@ -88,12 +79,10 @@ function runCode(code = null, filePath = null) {
             }
         });
         
-        // Handle process errors
         currentProcess.on('error', (error) => {
             isRunning = false;
             currentProcess = null;
             
-            // Clean up temp file
             try {
                 fs.unlinkSync(tempFile);
             } catch (e) {
@@ -110,12 +99,11 @@ function runCode(code = null, filePath = null) {
             updateStatus('Execution failed');
         });
         
-        // Set timeout for long-running processes
         setTimeout(() => {
             if (isRunning && currentProcess) {
                 addOutput('Process is taking too long. You can stop it manually if needed.', 'warning');
             }
-        }, 30000); // 30 seconds
+        }, 30000);
         
     } catch (error) {
         addOutput(`Failed to create temporary file: ${error.message}`, 'error');
@@ -135,13 +123,10 @@ function stopCode() {
 }
 
 function getPythonCommand() {
-    // Try different Python commands based on platform
     const commands = process.platform === 'win32' 
         ? ['python', 'python3', 'py'] 
         : ['python3', 'python'];
     
-    // For now, return the first command
-    // In a real implementation, you might want to test which one works
     return commands[0];
 }
 
@@ -151,14 +136,11 @@ function runInteractiveCode(code) {
         return;
     }
 
-    // Switch to output tab
     switchToTab('output');
     
-    // Update status
     updateStatus('Starting interactive Python...', true);
     
     try {
-        // Start Python in interactive mode
         const pythonCmd = getPythonCommand();
         currentProcess = spawn(pythonCmd, ['-i'], {
             stdio: ['pipe', 'pipe', 'pipe'],
@@ -167,20 +149,16 @@ function runInteractiveCode(code) {
         
         isRunning = true;
         
-        // Send code to Python stdin
         currentProcess.stdin.write(code + '\n');
         
-        // Handle stdout
         currentProcess.stdout.on('data', (data) => {
             addOutput(data.toString(), 'success');
         });
         
-        // Handle stderr
         currentProcess.stderr.on('data', (data) => {
             addOutput(data.toString(), 'error');
         });
         
-        // Handle process completion
         currentProcess.on('close', (code) => {
             isRunning = false;
             currentProcess = null;
@@ -188,7 +166,6 @@ function runInteractiveCode(code) {
             updateStatus('Interactive session ended');
         });
         
-        // Handle process errors
         currentProcess.on('error', (error) => {
             isRunning = false;
             currentProcess = null;
@@ -222,7 +199,6 @@ function addOutput(text, type = 'info') {
             }
         });
         
-        // Auto-scroll to bottom
         outputElement.scrollTop = outputElement.scrollHeight;
     }
 }
@@ -240,7 +216,6 @@ function updateStatus(message, loading = false) {
         statusElement.textContent = message;
     }
     
-    // Add loading indicator
     const container = document.querySelector('.container');
     if (container) {
         if (loading) {
@@ -252,17 +227,14 @@ function updateStatus(message, loading = false) {
 }
 
 function switchToTab(tabName) {
-    // Remove active class from all tabs
     document.querySelectorAll('.panel-tab').forEach(tab => {
         tab.classList.remove('active');
     });
     
-    // Hide all panels
     document.querySelectorAll('.panel-content').forEach(panel => {
         panel.classList.add('hidden');
     });
     
-    // Show selected tab and panel
     const selectedTab = document.getElementById(`tab-${tabName}`);
     const selectedPanel = document.getElementById(`panel-${tabName}`);
     
@@ -272,7 +244,6 @@ function switchToTab(tabName) {
     }
 }
 
-// Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         runCode,

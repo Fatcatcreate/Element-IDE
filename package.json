@@ -1,5 +1,5 @@
 {
-  "name": "python-ide",
+  "name": "element-ide",
   "version": "1.0.0",
   "description": "IDE",
   "main": "main.js",
@@ -9,7 +9,7 @@
     "build": "electron-builder",
     "dist": "electron-builder --publish=never",
     "postinstall": "electron-builder install-app-deps",
-    "rebuild": "electron-rebuild -f -w node-pty"
+    "rebuild": "electron-rebuild -f -w node-pty --arch=arm64"
   },
   "keywords": [
     "electron",
@@ -33,7 +33,7 @@
   },
   "build": {
     "asar": false,
-    "productName": "Python IDE",
+    "productName": "Element-IDE",
     
     "directories": {
       "output": "dist"

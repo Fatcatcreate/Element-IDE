@@ -18,19 +18,15 @@ function lintCode(code = null) {
         return;
     }
 
-    // Switch to problems tab
     switchToTab('problems');
     
-    // Clear previous problems
     clearProblems();
     addProblem('Linting Python code...', 'info');
     
-    // Update status
     updateStatus('Linting code...', true);
     
     isLinting = true;
     
-    // Try different linting approaches
     tryFlake8Linting(codeToLint)
         .then(success => {
             if (!success) {
@@ -80,7 +76,6 @@ function tryFlake8Linting(code) {
             });
             
             flake8Process.on('close', (code) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -88,21 +83,17 @@ function tryFlake8Linting(code) {
                 }
                 
                 if (code === 0) {
-                    // No issues found
                     addProblem('No issues found with Flake8.', 'success');
                     resolve(true);
                 } else if (output.trim()) {
-                    // Parse flake8 output
                     parseFlake8Output(output);
                     resolve(true);
                 } else {
-                    // Flake8 failed
                     resolve(false);
                 }
             });
             
             flake8Process.on('error', (error) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -140,7 +131,6 @@ function tryPycodestyleLinting(code) {
             });
             
             pycodestyleProcess.on('close', (code) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -159,7 +149,6 @@ function tryPycodestyleLinting(code) {
             });
             
             pycodestyleProcess.on('error', (error) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -176,7 +165,6 @@ function tryPycodestyleLinting(code) {
 
 function tryBuiltinLinting(code) {
     return new Promise((resolve) => {
-        // Basic Python syntax check
         const tempDir = os.tmpdir();
         const tempFile = path.join(tempDir, `python_ide_syntax_${Date.now()}.py`);
         
@@ -196,7 +184,6 @@ function tryBuiltinLinting(code) {
             });
             
             syntaxProcess.on('close', (code) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -213,7 +200,6 @@ function tryBuiltinLinting(code) {
             });
             
             syntaxProcess.on('error', (error) => {
-                // Clean up temp file
                 try {
                     fs.unlinkSync(tempFile);
                 } catch (e) {
@@ -300,7 +286,6 @@ function performBasicLinting(code) {
     lines.forEach((line, index) => {
         const lineNum = index + 1;
         
-        // Check for common issues
         if (line.length > 88) {
             addProblem('Line too long (>88 characters)', 'warning', lineNum, 89, 'E501');
             issueCount++;
@@ -316,7 +301,6 @@ function performBasicLinting(code) {
             issueCount++;
         }
         
-        // Check for multiple statements on one line
         if (line.includes(';') && !line.trim().startsWith('#')) {
             addProblem('Multiple statements on one line', 'warning', lineNum, line.indexOf(';') + 1, 'E702');
             issueCount++;
@@ -354,7 +338,6 @@ function addProblem(message, severity = 'info', line = null, column = null, code
         
         problemsElement.appendChild(div);
         
-        // Auto-scroll to bottom
         problemsElement.scrollTop = problemsElement.scrollHeight;
     }
 }
@@ -374,7 +357,6 @@ function getPythonCommand() {
     return commands[0];
 }
 
-// Export functions for use in other modules
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = {
         lintCode,

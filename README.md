@@ -35,10 +35,11 @@ The project's motivation was to create a self-contained development environment 
 ---
 
 ## Screenshots
-![Screenshot 1](testimage.png)
-![Screenshot 2](testimage2.png)
-![Screenshot 3](testimage3.png)
-![Screenshot 4](testimage4.png)
+
+<img width="1624" height="974" alt="testimage4" src="https://github.com/user-attachments/assets/fb0adc58-15c8-437c-aa41-f61f79a7a25f" />
+<img width="1312" height="912" alt="testimage3" src="https://github.com/user-attachments/assets/2f8e91df-8c1e-470a-9aa4-8c46793c5612" />
+<img width="1312" height="912" alt="testimage2" src="https://github.com/user-attachments/assets/e49a54c3-d756-4136-8449-404054b58d47" />
+<img width="1312" height="912" alt="testimage" src="https://github.com/user-attachments/assets/7b976580-a44f-475c-8263-5e0702446dd6" />
 
 ---
 

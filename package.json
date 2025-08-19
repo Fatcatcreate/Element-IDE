@@ -8,7 +8,8 @@
     "dev": "electron . --dev",
     "build": "electron-builder",
     "dist": "electron-builder --publish=never",
-    "postinstall": "electron-builder install-app-deps"
+    "postinstall": "electron-builder install-app-deps",
+    "rebuild": "electron-rebuild -f -w node-pty"
   },
   "keywords": [
     "electron",
